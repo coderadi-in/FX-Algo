@@ -34,3 +34,22 @@ class Signal:
     # * STRING REPRESENTATION
     def __str__(self):
         return f"{self.symbol} | {self.entry_time} | {self.entry_price} | {self.type} | sl={self.sl} | tp={self.tp} | {self.strategy} | {self.risk} | {self.reward}"
+    
+    # * FUNCTION TO CONVERT THE OBJECT TO A DICT
+    def to_dict(self) -> dict:
+        '''
+        Converts the Signal object to a dictionary.
+        '''
+
+        return {
+            'symbol': self.symbol,
+            'entry_time': self.entry_time,
+            'entry_price': self.entry_price,
+            'type': self.type,
+            'sl': self.sl,
+            'tp': self.tp,
+            'strategy': self.strategy,
+            'risk': self.risk,
+            'reward': self.reward,
+            'lot_size': self.lot_size,
+        }

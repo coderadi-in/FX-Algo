@@ -6,6 +6,7 @@ Used to back test strategies.
 # ? IMPORTS
 from account.account_service import AccountService
 from risk.risk_manager import RiskManager
+from consensus.consensus_engine import ConsensusEngine
 from strategies.base_strategy import BaseStrategy
 import pandas as pd
 from models.trade import Trade
@@ -22,13 +23,14 @@ class BackTestingEngine:
     def __init__(
         self, *, account: AccountService,
         manager: RiskManager,
-        strategy: BaseStrategy=None,
         data: pd.DataFrame=None,
+        consensus: ConsensusEngine,
         symbol: str
     ):
         self.account = account
         self.manager = manager
-        self.strategy = strategy
+        self.consensus = consensus
+        self.strategies: list[BaseStrategy] = []
         self.data = data
         self.symbol = symbol
         self.trades = []
@@ -41,7 +43,8 @@ class BackTestingEngine:
         :param strategy: The strategy object to add.
         '''
 
-        self.strategy = strategy
+        self.strategies.append(strategy)
+        print(f"Fed strategy: {strategy.NAME}")
 
     # * FUNCTION TO FEED DATA
     def feed_data(self, data: pd.DataFrame):
@@ -91,8 +94,7 @@ class BackTestingEngine:
         :param start_index: The amount of candles to start simulation with.
         '''
 
-        print("Starting optimistic simulation...")
-        print(f"Fed strategy: {self.strategy.NAME}\n")
+        print("Running optimistic simulation...")
 
         for i in range(start_index, len(self.data)):
             # Create partial dataframe to analyze
@@ -131,30 +133,36 @@ class BackTestingEngine:
                     self.account.equity += profit
                     self.account.free_margin += profit
 
-            # Analyze data with strategy
-            signal = self.strategy.generate_signal(current_df)
-            if (signal is None): continue # Conditional if got no signal
+            # Analyze data with all strategies
+            for strategy in self.strategies:
+                signal = strategy.generate_signal(current_df)
+                if (signal is None): continue
+                self.consensus.add_signal(signal)
+
+            # Finalize a signal with consensus engine
+            final_signal = self.consensus.finalize()
+            if (final_signal is None): continue
 
             # Validate signal
-            validation = self.manager.validate(signal)
+            validation = self.manager.validate(final_signal)
 
             # Conditional if signal is rejected.
             if (not validation.allowed):
-                print("Signal reject by Risk Manager.")
-                print(validation.reason + "\n")
+                # print("Signal reject by Risk Manager.")
+                # print(validation.reason + "\n")
                 continue
 
             # Open a position
             opened_position = Trade(
-                symbol=signal.symbol,
-                entry_time=signal.entry_time,
-                entry_price=signal.entry_price,
-                type=signal.type,
-                sl=signal.sl,
-                tp=signal.tp,
-                risk=signal.risk,
-                reward=signal.reward
+                symbol=final_signal.symbol,
+                entry_time=final_signal.entry_time,
+                entry_price=final_signal.entry_price,
+                type=final_signal.type,
+                sl=final_signal.sl,
+                tp=final_signal.tp,
+                risk=final_signal.risk,
+                reward=final_signal.reward
             )
 
             # Add opened position to account service
-            self.account.open_positions[signal.symbol] = opened_position
+            self.account.open_positions[final_signal.symbol] = opened_position
