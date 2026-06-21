@@ -73,8 +73,8 @@ class RiskManager:
             )
         
         # VALIDATE SL
-        if (signal.sl > self.MAX_SL_SIZE):
-            exceed = signal.sl - self.MAX_SL_SIZE
+        if (signal.risk > self.MAX_SL_SIZE):
+            exceed = signal.risk - self.MAX_SL_SIZE
             return Validation(
                 allowed=False,
                 reason=f"Max SL size exceeded by {exceed} USD/PIP.",

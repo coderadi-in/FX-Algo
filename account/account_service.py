@@ -6,6 +6,7 @@ A virtual account system for the engine.
 # ? IMPORTS
 import pandas as pd
 from datetime import date
+from models.trade import Trade
 
 
 # & CLASS INIT
@@ -22,7 +23,7 @@ class AccountService:
         self.margin = 0
         self.free_margin = balance
         self.margin_level = 0
-        self.open_positions = {}
+        self.open_positions: dict[str:Trade] = {}
 
     # * FUNCTION TO GET ALL TRADES OF CURRENT DATE
     def get_current_date_trades(self):

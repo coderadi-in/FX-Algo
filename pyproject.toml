@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "datetime>=6.0",
+    "matplotlib>=3.11.0",
     "metatrader5>=5.0.5735",
     "pandas>=3.0.3",
 ]

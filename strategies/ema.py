@@ -3,23 +3,26 @@ Manages the EMA strategy.
 '''
 
 # ? IMPORTS
+from .base_strategy import BaseStrategy
 from models.signal import Signal
 import pandas as pd
 from datetime import datetime
 
 
 # & CLASS INIT
-class EMA_Strategy:
+class EMA_Strategy(BaseStrategy):
     '''
     Generates signals based to given fast and slow EMA levels
     '''
 
     # * CONSTRUCTOR
     def __init__(self, fast: int, slow: int, threshold: float = 0.0):
+        super().__init__()
         self.fast = fast
         self.slow = slow
         self.threshold = threshold
         self.symbol = None
+        self.NAME = f"EMA {self.fast}/{self.slow}"
 
     # * FUNCTION TO GENERATE SIGNAL BASED ON EMA CROSSOVER
     def generate_signal(self, data: pd.DataFrame, threshold: float|None = None) -> Signal|None:
@@ -57,7 +60,7 @@ class EMA_Strategy:
             previous_distance <= -threshold
         ):
             sl = min(current_candle['low'], previous_candle['low'])
-            risk = current_candle['close'] - sl
+            risk = abs(current_candle['close'] - sl)
             reward = risk * 4   # 1:4
             tp = current_candle['close'] + reward
 
@@ -79,10 +82,10 @@ class EMA_Strategy:
             current_distance < -threshold and
             previous_distance >= threshold
         ):
-            sl = min(current_candle['high'], previous_candle['high'])
-            risk = sl - current_candle['close']
+            sl = max(current_candle['high'], previous_candle['high'])
+            risk = abs(sl - current_candle['close'])
             reward = risk * 4   # 1:4
-            tp = current_candle['close'] - reward # 1:4
+            tp = current_candle['close'] - reward
 
             return Signal(
                 self.symbol,
