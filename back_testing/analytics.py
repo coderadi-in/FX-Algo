@@ -66,13 +66,17 @@ class BackTestingAnalytics:
             (losses / total_trades) * average_loss
         )
 
+        rejected = len(self.engine.rejected)
+
         return pd.Series(
             [
                 total_trades, wins, losses, win_rate, loss_rate, net_profit,
-                average_win, average_loss, profit_factor, largest_win, largest_loss, expectancy, self.engine.account.balance
+                average_win, average_loss, profit_factor, largest_win, largest_loss, expectancy, 
+                self.engine.account.balance, rejected
             ],
             index=[
                 "Total Trades", "Wins", "Losses", "Win Rate (%)", "Loss Rate (%)", "Net Profit",
-                "Average Win", "Average Loss", "Profit Factor", "Largest Win", "Largest Loss", "Expectancy", "Balance"
+                "Average Win", "Average Loss", "Profit Factor", "Largest Win", "Largest Loss", "Expectancy", 
+                "Balance", "Rejected trades"
             ]
         )

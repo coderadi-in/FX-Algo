@@ -68,6 +68,17 @@ class MT5Service:
 
         info = mt5.symbol_info(symbol)
         return info._asdict()
+    
+    # * FUNCTION TO GET THE CONTRACT SIZE OF SPECIFIC SYMBOL
+    def get_contract_size(self, symbol: str):
+        '''
+        Returns the contract size of given symbol.
+
+        :param symbol: The symbol to get contract size of.
+        '''
+
+        info = mt5.symbol_info(symbol)
+        return info.trade_contract_size
 
     # * FUNCTION TO FETCH HISTORY
     def get_history(self, symbol: str, timeframe: int, amount: int):

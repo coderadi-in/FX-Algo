@@ -25,10 +25,24 @@ class RiskManager:
         self.POSITION_PER_SYMBOL = 1
         self.MAX_SL_SIZE = 25
 
+        self.CONTRACT_SIZES = {
+            "XAUUSD": 100,
+            "EURUSD": 100_000,
+            "GBPUSD": 100_000,
+            "USDJPY": 100_000,
+        }
+
     # * FUNCTION TO CALCULATE LOT SIZE
-    def calculate_lot_size(self, symbol_info: dict, sl:float, pip_value:float):
+    def calculate_lot_size(self, symbol_info: dict, sl:float):
+        '''
+        Calculates an ideal lot size for a trade.
+
+        :param symbol_info: A dictionary containing the information of current symbol.
+        :param sl: SL value in pips.
+        '''
+
         risk_amount = self.account.balance * self.RISK_PER_TRADE
-        calc_lot_size = round(risk_amount / (sl * pip_value), 3)
+        calc_lot_size = round(risk_amount / (sl * symbol_info.get('trade_contract_size')), 3)
 
         min_lot = symbol_info.get('volume_min')
         lot_step = symbol_info.get('volume_step')
@@ -37,6 +51,19 @@ class RiskManager:
         final_value = max(min_lot, lot_size)
 
         return final_value
+    
+    def points_to_usd(self, points: float, lot_size: float, contract_size: float) -> float:
+        """
+        Converts a price movement (points) into USD profit/loss.
+
+        :param points: Price movement (tp - entry or entry - sl)
+        :param lot_size: Trade lot size (e.g. 0.01, 0.1, 1.0)
+        :param contract_size: Units per lot.
+
+        Returns:
+            Profit/Loss in USD.
+        """
+        return points * lot_size * contract_size
 
     # * FUNCTION TO VALIDATE TRADE
     def validate(self, signal: Signal) -> Validation:
@@ -45,8 +72,9 @@ class RiskManager:
         '''
 
         # VALIDATE RISK
-        if (signal.risk > self.account.balance * self.RISK_PER_TRADE):
-            exceeded = signal.risk - (self.account.balance * self.RISK_PER_TRADE)
+        risk_amount = self.points_to_usd(signal.risk, signal.lot_size, self.CONTRACT_SIZES[signal.symbol])
+        if (risk_amount > self.account.balance * self.RISK_PER_TRADE):
+            exceeded = risk_amount - (self.account.balance * self.RISK_PER_TRADE)
             return Validation(
                 allowed=False,
                 reason=f"Max risk per trade exceeded by {exceeded} USD/PIPs",
@@ -73,8 +101,8 @@ class RiskManager:
             )
         
         # VALIDATE SL
-        if (signal.risk > self.MAX_SL_SIZE):
-            exceed = signal.risk - self.MAX_SL_SIZE
+        if (risk_amount > self.MAX_SL_SIZE):
+            exceed = risk_amount - self.MAX_SL_SIZE
             return Validation(
                 allowed=False,
                 reason=f"Max SL size exceeded by {exceed} USD/PIP.",
@@ -84,29 +112,15 @@ class RiskManager:
         # DAILY LEVEL VALIDATION
         if (datetime.fromtimestamp(signal.entry_time, UTC).date() == date.today()):
 
-            today_trades = self.account.get_current_date_trades()
-            loosing_trades = 0
-            
-            # VALIDATE DAILY LOSS LIMIT
-            for trade in today_trades:
-                if (trade['profit'] < 0):
-                    loosing_trades += 1
-
-            if (loosing_trades >= self.MAX_DAILY_LOSS):
-                return Validation(
-                    allowed=False,
-                    reason="Daily loss limit exceeded.",
-                    signal=signal
-                )
-
-
             # VALIDATE DAILY TRADE LIMIT
+            today_trades = self.account.get_current_date_trades()
             if (len(today_trades) >= self.MAX_DAILY_TRADES):
                 return Validation(
                     allowed=False,
                     reason="Daily trades limit reached.",
                     signal=signal
                 )
+
             
         return Validation(
             allowed=True,

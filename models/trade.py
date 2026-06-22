@@ -26,6 +26,7 @@ class Trade:
         reward: float | None = None,
         profit: float = None,
         close_reason: str = None,
+        lot_size: float = None
     ):
         self.symbol = symbol
         self.type = type
@@ -44,6 +45,7 @@ class Trade:
 
         self.profit = profit
         self.close_reason = close_reason
+        self.lot_size = lot_size
 
     def __str__(self):
         return f"Trade({self.symbol}, {self.type}, {self.close_reason}, {self.entry_time}, {self.entry_price}, {self.profit})"
@@ -62,4 +64,5 @@ class Trade:
             'reward': self.reward,
             'profit': self.profit,
             'close_reason': self.close_reason,
+            'lot_size': self.lot_size
         }
