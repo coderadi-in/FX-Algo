@@ -1,5 +1,5 @@
 '''
-Orchestrates everything.
+Orchestrates back-testing.
 The lobby of whole game.
 '''
 

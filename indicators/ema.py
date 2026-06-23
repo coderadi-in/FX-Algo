@@ -16,9 +16,10 @@ class EMA_Indicator:
     def __init__(self, fast: int, slow: int):
         self.fast = fast
         self.slow = slow
+        self.NAME = f"EMA {self.fast}/{self.slow}i"
         
     # * FUNCTION TO CALCULATE EMA
-    def calculate_ema(self, data: pd.DataFrame) -> pd.DataFrame:
+    def calculate_values(self, data: pd.DataFrame) -> pd.DataFrame:
         '''
         Calculates EMA for given data.
 
